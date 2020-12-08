@@ -14,9 +14,6 @@ const mockCweListTargetsByRule = jest.fn();
 const mockCwePutTargets = jest.fn();
 jest.mock('aws-sdk', () => {
   return {
-    config: {
-      region: 'fake-region',
-    },
     CloudWatchEvents: jest.fn(() => ({
       listRules: mockCweListRules,
       listTargetsByRule: mockCweListTargetsByRule,
@@ -25,6 +22,9 @@ jest.mock('aws-sdk', () => {
     ECS: jest.fn(() => ({
       registerTaskDefinition: mockEcsRegisterTaskDef,
     })),
+    config: {
+      region: 'fake-region',
+    },
   };
 });
 
@@ -89,20 +89,20 @@ describe('Deploy to ECS', () => {
           return Promise.resolve({
             Rules: [
               {
-                Name: 'Sync-Task',
                 Arn: 'arn:aws:events:us-east-1:00000000001:rule/Sync-Task',
-                State: 'ENABLED',
                 Description: 'Foooo.',
-                ScheduleExpression: 'rate(15 minutes)',
                 EventBusName: 'default',
+                Name: 'Sync-Task',
+                ScheduleExpression: 'rate(15 minutes)',
+                State: 'ENABLED',
               },
               {
-                Name: 'Prefixed-Task',
                 Arn: 'arn:aws:events:us-east-1:00000000001:rule/Prefixed-Task',
-                State: 'ENABLED',
                 Description: 'Barrr.',
-                ScheduleExpression: 'rate(20 minutes)',
                 EventBusName: 'default',
+                Name: 'Prefixed-Task',
+                ScheduleExpression: 'rate(20 minutes)',
+                State: 'ENABLED',
               },
             ],
           });
@@ -116,43 +116,43 @@ describe('Deploy to ECS', () => {
           return Promise.resolve({
             Targets: [
               {
-                Id: 'Baz',
                 Arn:
                   'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/another-cluster',
-                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
-                Input:
-                  '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
                 EcsParameters: {
+                  LaunchType: 'EC2',
+                  TaskCount: 1,
                   TaskDefinitionArn:
                     'arn:aws:ecs:<REGION>:<ACCOUNT ID>:task-definition/task-def-family:1',
-                  TaskCount: 1,
-                  LaunchType: 'EC2',
                 },
-              },
-              {
-                Id: 'Foo',
-                Arn: 'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/fake-cluster',
-                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
+                Id: 'Baz',
                 Input:
                   '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
+                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
+              },
+              {
+                Arn: 'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/fake-cluster',
                 EcsParameters: {
+                  LaunchType: 'EC2',
+                  TaskCount: 1,
                   TaskDefinitionArn: taskDefinitionArn,
-                  TaskCount: 1,
-                  LaunchType: 'EC2',
                 },
-              },
-              {
-                Id: 'Bar',
-                Arn: 'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/fake-cluster',
-                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
+                Id: 'Foo',
                 Input:
                   '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
+                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
+              },
+              {
+                Arn: 'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/fake-cluster',
                 EcsParameters: {
+                  LaunchType: 'EC2',
+                  TaskCount: 1,
                   TaskDefinitionArn:
                     'arn:aws:ecs:<REGION>:<ACCOUNT ID>:task-definition/another-task-family:1',
-                  TaskCount: 1,
-                  LaunchType: 'EC2',
                 },
+                Id: 'Bar',
+                Input:
+                  '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
+                RoleArn: 'arn:aws:iam::<ACCOUNT ID>:role/ecsEventsRole',
               },
             ],
           });
@@ -228,14 +228,14 @@ describe('Deploy to ECS', () => {
     await run();
     expect(core.setFailed).toHaveBeenCalledTimes(0);
     expect(mockEcsRegisterTaskDef).toHaveBeenNthCalledWith(1, {
-      family: 'task-def-family',
       containerDefinitions: [
         {
-          name: 'sample-container',
           cpu: 0,
           essential: false,
+          name: 'sample-container',
         },
       ],
+      family: 'task-def-family',
       requiresCompatibilities: ['EC2'],
     });
   });

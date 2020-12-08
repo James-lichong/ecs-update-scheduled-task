@@ -1,5 +1,5 @@
-name: ECS "Deploy Task Definition To Scheduled Task" Action for GitHub Actions
-description: Registers an Amazon ECS task definition & deploys it to related ECS scheduled tasks
+name: ECS "Update container image revision to related ECS scheduled tasks" Action for GitHub Actions
+description: Update container image revision to related ECS scheduled tasks
 branding:
   color: orange
   icon: cloud

@@ -9,15 +9,15 @@ function getTaskDefArn(taskName = 'demo', taskVersion = 1) {
 
 function getTargetObject(clusterName = 'default', taskName, taskVersion) {
   return {
-    Id: 'Demo-Scheduled-Task',
     Arn: `arn:aws:ecs:${region}:${awsId}:cluster/${clusterName}`,
-    RoleArn: `arn:aws:iam::${awsId}:role/ecsEventsRole`,
-    Input: '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
     EcsParameters: {
-      TaskDefinitionArn: getTaskDefArn(taskName, taskVersion),
-      TaskCount: 1,
       LaunchType: 'EC2',
+      TaskCount: 1,
+      TaskDefinitionArn: getTaskDefArn(taskName, taskVersion),
     },
+    Id: 'Demo-Scheduled-Task',
+    Input: '{"containerOverrides":[{"name":"Demo","command":["sleep"," 50"]}]}',
+    RoleArn: `arn:aws:iam::${awsId}:role/ecsEventsRole`,
   };
 }
 

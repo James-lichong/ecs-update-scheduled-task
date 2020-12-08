@@ -5,72 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('yaml');
 
-// Attributes that are returned by DescribeTaskDefinition, but are not valid RegisterTaskDefinition inputs
-const IGNORED_TASK_DEFINITION_ATTRIBUTES = [
-  'compatibilities',
-  'taskDefinitionArn',
-  'requiresAttributes',
-  'revision',
-  'status',
-];
-
-function isEmptyValue(value) {
-  if (value === null || value === undefined || value === '') {
-    return true;
-  }
-
-  if (Array.isArray(value) && value.length === 0) {
-    return true;
-  }
-
-  if (typeof value === 'object' && Object.values(value).length === 0) {
-    return true;
-  }
-
-  return false;
-}
-
-function emptyValueReplacer(_, value) {
-  if (isEmptyValue(value)) {
-    return undefined;
-  }
-
-  if (typeof value === 'object') {
-    for (const childValue of Object.values(value)) {
-      if (!isEmptyValue(childValue)) {
-        // the object has at least one non-empty property
-        return value;
-      }
-    }
-    // the object has no non-empty property
-    return undefined;
-  }
-
-  return value;
-}
-
-function cleanNullKeys(obj) {
-  return JSON.parse(JSON.stringify(obj, emptyValueReplacer));
-}
-
-function removeIgnoredAttributes(taskDef) {
-  for (const attribute of IGNORED_TASK_DEFINITION_ATTRIBUTES) {
-    if (taskDef[attribute]) {
-      core.warning(
-        `Ignoring property '${attribute}' in the task definition file. ` +
-          'This property is returned by the Amazon ECS DescribeTaskDefinition API and may be shown in the ECS console, ' +
-          'but it is not a valid field when registering a new task definition. ' +
-          'This field can be safely removed from your task definition file.'
-      );
-      delete taskDef[attribute];
-    }
-  }
-
-  return taskDef;
-}
-
 /*
- * Target object:
+ * Target object for example:
  * {
  *   Id: 'Alpine-Cron-Demo-Scheduled-Task',
  *   Arn: 'arn:aws:ecs:<REGION>:<ACCOUNT ID>:cluster/<CLUSTER NAME>',
@@ -144,13 +80,21 @@ async function processCloudwatchEventRule(
     .promise();
 }
 
+function getTaskDefArn(taskDefinitionFile) {
+  const taskDefPath = path.isAbsolute(taskDefinitionFile)
+    ? taskDefinitionFile
+    : path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile);
+  const fileContents = fs.readFileSync(taskDefPath, 'utf8');
+  const taskDefinition = yaml.parse(fileContents);
+  return taskDefinition.taskDefinitionArn;
+}
+
 async function run() {
   try {
     const awsCommonOptions = {
       customUserAgent: 'amazon-ecs-deploy-task-definition-for-github-actions',
     };
 
-    const ecs = new aws.ECS(awsCommonOptions);
     const cwe = new aws.CloudWatchEvents(awsCommonOptions);
 
     // Get inputs
@@ -160,30 +104,8 @@ async function run() {
     const cluster = core.getInput('cluster', { required: false }) || 'default';
     const rulePrefix = core.getInput('rule-prefix', { required: false }) || '';
 
-    // Register the task definition
-    core.debug('Registering the task definition');
-    const taskDefPath = path.isAbsolute(taskDefinitionFile)
-      ? taskDefinitionFile
-      : path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile);
-    const fileContents = fs.readFileSync(taskDefPath, 'utf8');
-    const taskDefContents = removeIgnoredAttributes(
-      cleanNullKeys(yaml.parse(fileContents))
-    );
-    let registerResponse;
-    try {
-      registerResponse = await ecs
-        .registerTaskDefinition(taskDefContents)
-        .promise();
-      core.debug(`Register response: ${JSON.stringify(registerResponse)}`);
-    } catch (error) {
-      core.setFailed(
-        'Failed to register task definition in ECS: ' + error.message
-      );
-      core.debug('Task definition contents:');
-      core.debug(JSON.stringify(taskDefContents, undefined, 4));
-      throw error;
-    }
-    const taskDefArn = registerResponse.taskDefinition.taskDefinitionArn;
+    // Get taskDefArn from task definition file
+    const taskDefArn = getTaskDefArn(taskDefinitionFile);
     core.setOutput('task-definition-arn', taskDefArn);
 
     // TODO: Batch this?
