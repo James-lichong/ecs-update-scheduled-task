@@ -1,6 +1,6 @@
-## ECS "Deploy Task Definition to Scheduled Tasks" Action for GitHub Actions
+## ECS "Update ECS container image revision to Scheduled Tasks" Action for GitHub Actions
 
-Registers an Amazon ECS task definition and deploys it to scheduled tasks in a given ECS cluster
+Update container image revision to scheduled tasks in a given ECS cluster
 
 **Table of Contents**
 
@@ -17,7 +17,7 @@ Registers an Amazon ECS task definition and deploys it to scheduled tasks in a g
 
 ## Acknowledgements
 
-This project is a fork of the [amazon-ecs-deploy-task-definition](https://github.com/aws-actions/amazon-ecs-deploy-task-definition) that has been modified and re-tooled to work with ECS scheduled tasks. As such its initial release version starts at 2.0.0. Be sure to use the correct tag.
+This project is a fork of the [amazon-ecs-deploy-task-definition](https://github.com/aws-actions/amazon-ecs-deploy-task-definition) that has been modified and re-tooled to work with ECS scheduled tasks. As such its initial release version starts at 1.0.0. Be sure to use the correct tag.
 
 ## Usage
 
@@ -25,7 +25,7 @@ The action assumes you have already setup 1 or more tasks to run as a scheduled 
 
 ```yaml
 - name: Deploy to Amazon ECS Scheduled Tasks
-  uses: airfordable/ecs-deploy-task-definition-to-scheduled-task@v2.0.0
+  uses: TrustCodes/ecs-update-scheduled-task@v1.0.0
   with:
     cluster: my-cluster (optional, defaults to 'default')
     rule-prefix: my-rule-prefix (optional, defaults to '')
@@ -48,6 +48,7 @@ Amazon recommends following [Amazon IAM best practices](https://docs.aws.amazon.
 - [Grant least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege) to the credentials used in GitHub Actions workflows. Grant only the permissions required to perform the actions in your GitHub Actions workflows. See the Permissions section below for the permissions required by this action.
 - [Rotate the credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#rotate-credentials) used in GitHub Actions workflows regularly.
 - [Monitor the activity](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#keep-a-log) of the credentials used in GitHub Actions workflows.
+  
 
 ## Permissions
 
@@ -57,12 +58,6 @@ This action requires the following minimum set of permissions:
 {
   "Version": "2012-10-17",
   "Statement": [
-    {
-      "Action": ["ecs:RegisterTaskDefinition"],
-      "Effect": "Allow",
-      "Resource": "*",
-      "Sid": "RegisterTaskDefinition"
-    },
     {
       "Action": ["events:ListRules", "events:ListTargetsByRule"],
       "Effect": "Allow",
